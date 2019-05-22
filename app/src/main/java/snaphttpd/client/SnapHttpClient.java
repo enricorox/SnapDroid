@@ -60,7 +60,7 @@ public class SnapHttpClient implements Runnable{
             try {
                 socket = new Socket();
                 //-------------------------------------------
-                //WARNING: Socket extremely low timeout!!! Risk of TCP [RST] flag!
+                //WARNING: Snap4Arduino's Socket has extremely low timeout!!! Risk of TCP [RST] flag!
                 socket.connect(new InetSocketAddress(serverAddress, serverPort), 0);
                 Log.d(TAG,"Connected!");
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -69,7 +69,7 @@ public class SnapHttpClient implements Runnable{
                 while (sessionIsOpen) {//---session starts---
                     waitRequest();
                     Log.d(TAG,"Response acquired! :)");
-                    if(stopped){//stopped triggered!
+                    if(isStopped()){//stopped triggered!
                         Log.d(TAG,"Stopping session...");
                         break;
                     }
@@ -108,13 +108,10 @@ public class SnapHttpClient implements Runnable{
                 out.close();
                 in.close();
                 socket.close();
-
-                if(stopped)//stopped triggered!
-                    break;
             }catch(Exception e){
                 e.printStackTrace();
             }//--end catch
-        }//--end while(true)
+        }//--end while(isStopped())
         Log.d(TAG,"Stopped.");
     }//--end run()
 
@@ -126,7 +123,7 @@ public class SnapHttpClient implements Runnable{
     }
 
     public void send(String data){
-        if(stopped)
+        if(isStopped())
             return;
 
         queue.addFirst(data);

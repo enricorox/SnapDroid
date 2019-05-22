@@ -120,6 +120,7 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
                 //Commands:
                 if(path.equalsIgnoreCase("/ping"))
                     return "pong";
+
                 if(path.contains("/vibrate/")){
                     Scanner sc = new Scanner(path);
                     sc.useDelimiter("/");
