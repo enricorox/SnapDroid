@@ -15,96 +15,87 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-
-
-/**
- * Minimal HTTP server class.
- * <p>You must implement giveBody(String body) to handle GET request only.
- * <p>you can override handleRequest(Request req) for handling all request. 
- * 
- * @author Enrico R.
- * @see HttpSession 
- * @see Request
- * @see Response
- */
+// Minimal HTTP server class.
 public class SnapHttpServer implements Runnable{
-	private final String TAG="snap-server";
-	private final int port;//server socket port
-	private final int backlog;//queue length of tcp connection
-	private final int maxThread;//max number of thread handling connections
-	private volatile boolean stopped; //thread-safe
-	private ServerSocket serverSocket; //NOTE stop() can close it!
+	private final String TAG = "snap-server";
+	// Server socket port
+	private final int port;
+	// Tcp connection queue's length
+	private final int backlog;
+	// Volatile variable can't be cached
+	private volatile boolean stopped;
+	private ServerSocket serverSocket;
 	private final List<HttpSession> openSessions;
 	private Resource resource;
 
-	/**
-	 * Construct server listening at port aport with optional debug
-	 * @param r String resource that maps path to resource. Must be thread-safe
-	 * @param aport Listening port
-	 */
+	//Construct server listening at port aport with optional debug
 	public SnapHttpServer(Resource r, int aport) {
-		//initialization 
+		// Initialization
 		resource =r;
 		port=aport;
 		stopped=true;
 		backlog=5;
-		maxThread=15;
+		// List of active sessions
 		openSessions = Collections.synchronizedList(new LinkedList<HttpSession>());
 	}
-	/**
-	 * Start the server synchronously.
-	 */
+
+	// Start the server
 	public void run() {
+		stopped=false;
 		Log.d(TAG,"Starting server on port " + port);
 		Log.d(TAG,"Connect to "+ getMyIpAddress()+":"+port);
-		stopped=false;
+
 		try{
-			serverSocket = new ServerSocket(port,backlog);			
-			serverSocket.setReuseAddress(true); // we can reuse that port
-            //serverSocket.setSoTimeout(1000);
+			// Initialize the listening socket
+			serverSocket = new ServerSocket(port,backlog);
+			// We can reuse that port
+			serverSocket.setReuseAddress(true);
+
+			// Run forever until stopped
 			while(!isStopped()) {
-				try {
-					Socket clientSocket = serverSocket.accept(); //suspensive call!
-					//SOCKET HANDLING
-					HttpSession s = new HttpSession(this, clientSocket);
-					synchronized (openSessions) {
-						openSessions.add(s);
-					}
-					Thread t = new Thread(s);
-					t.start();
-				}catch(SocketTimeoutException e){
-					Log.d(TAG,"Socket timeout"); //TODO not properly catched
+				// Accept connection, suspensive call!
+				Socket clientSocket = serverSocket.accept();
+
+				// Make a new HTTP session
+				HttpSession s = new HttpSession(this, clientSocket);
+				// Add it in the active sessions list
+				synchronized (openSessions) {
+					openSessions.add(s);
 				}
+				// Start that session in a new thread
+				Thread t = new Thread(s);
+				t.start();
 			}
 		} catch (Exception e) {
+			// If server is stopped, return
 			if(isStopped()) {
 				Log.d(TAG,"Server killed.");
 				return;
 			}
+			// If there are errors print them
 			e.printStackTrace();
 		}
 	}
-	/**
-	 *
-	 */
-	//override in subclasses!
-	//handle only get by default
+
+	// Callback from HttpSession
 	@NonNull
 	Response requestHandler(@NonNull Request req) {
-		if(!req.isGet() || resource ==null)
+		// If we don't have implemented nothing
+		if(!req.isGet() || resource == null)
 			return new Response(501,"NOT IMPLEMENTED");		
 
-		String body= resource.send(req.getPath()); //custom body?
-		
-		if(body==null)//no body
+		// Get a body from Resource object
+		String body = resource.send(req.getPath());
+
+		// If there isn't a body
+		if(body==null)
 			return new Response(404,"404 NOT FOUND").setKeepAlive(false);
-		
+
+		// If all is OK
 		return new Response(200,body); 
 	}	
 	
-	/**
-	 * Start the server asynchronously.
-	 */
+	// Start the server in a new thread
 	public void start() {
 		Thread t=new Thread(this); //"this" is Runnable
 		t.start();
@@ -112,16 +103,20 @@ public class SnapHttpServer implements Runnable{
 	}
 
 	
-	// is thread-safe? YES
+	// Stop the server and all open sessions
 	public void stop() {
 		Log.d(TAG,"Stopping...");
-		stopped=true;	
+		stopped=true;
+
+		// Stop all sessions
 		synchronized(openSessions) {
 			Iterator<HttpSession> it=openSessions.iterator();
 			while(it.hasNext()) {
 				it.next().stop();
 			}
 		}
+
+		// Close the socket
 		try {			
 			serverSocket.close();
 			Log.d(TAG,"Server socket closed!");
@@ -130,33 +125,36 @@ public class SnapHttpServer implements Runnable{
 			e.printStackTrace();
 		}
 	}
-	//callback from httpSession 
+
+	// Remove a stopped session
 	void removeSession(HttpSession s) {
 		synchronized(openSessions) {
 			openSessions.remove(s);
 		}
 	}
+
 	public boolean isStopped() {
 		return stopped;
 	}
+
 	public boolean isRunning() {
 		return !stopped;
 	}
+
+	// Get IPv4 address
 	public static String getMyIpAddress() {
         try {
-        	//search interfaces
+        	// Search interfaces
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
                 NetworkInterface intf = en.nextElement();
-                //search addresses
+                // Search addresses
                 for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
                     InetAddress inetAddress = enumIpAddr.nextElement();
                     if (!inetAddress.isLoopbackAddress() && (inetAddress instanceof Inet4Address))
 						return inetAddress.getHostAddress();
                 }
             }
-        } catch (SocketException ex) {
-            //Log.e("Socket exception in GetIP Address of Utilities", ex.toString());
-        }
+        } catch (SocketException ignored) {}
         return null; 
 	}
 	

@@ -9,81 +9,102 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 
-//task handling one socket 
+// Manage one HTTP session
 public 	class HttpSession implements Runnable{
 	private Socket clientSocket;
 	private PrintWriter out;
 	private BufferedReader in;
 	private SnapHttpServer httpd;
 	private final String TAG="snap-server-session";
-	private boolean stopped;
+	private volatile boolean stopped;
+
 	public HttpSession(SnapHttpServer server, Socket aClientSocket) {
+		// Save a reference to SnapHttpServer
 		httpd=server;
+		// Socket for this session
 		clientSocket=aClientSocket;		
 	}
+
 	public void run() {
 		try {
-			Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] accepted");		
+			Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] accepted");
+
+			// Buffering
 			out = new PrintWriter(clientSocket.getOutputStream(), true);
 		    in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-		    //Request req= new Request();
+
+		    // Set timeout to 3000 milliseconds
 			clientSocket.setSoTimeout(3000);
+
+			// Run forever until stopped
 		    while(!isStopped()) {
 				Request req = new Request();
-		    	//req.reset(); //new request			    					
-				while(req.parseRequest(in.readLine())); //reading request line by line
-				//NOTE: [Chromium] in.readLine() return null after first response
+
+				// Parse the request line by line
+				while(req.parseRequest(in.readLine()));
+
+				// Check if there are errors
 				if(req.isSocketBroken()) {
 					Log.d(TAG,"Broken Socket! Nothing to do.");
+					// Stop the session
 					break;					
 				}
-				Log.d(TAG,"***new request***");								
-				//handling request					
-				Response res;
-				
+				Log.d(TAG,"***new request***");
+
+				// If don't have errors
 				if(req.isGood()) {
 					Log.d(TAG,"Good request");
-					/*
-					if(Thread.activeCount()>httpd.maxThread) {
-						res = new Response(503, "503 SERVICE UNAVAILABLE (SERVER OVERLOADED)").setKeepAlive(false);
-						out.println(res.toString());
-						break;
-					}else
-					*/
-						res=httpd.requestHandler(req);
-					res.setProtocol(req.getProtocol()); //set the same protocol
-					res.setKeepAlive(req.hasKeepAlive());
+
+					// Get a response from SnapHttpServer
+					Response res=httpd.requestHandler(req);
+					// Set the same protocol
+					res.setProtocol(req.getProtocol());
+					// Set keep-alive
+					res.setKeepAlive(true);
+					// Send the response
 					out.println(res.toString());
+
+					// If request doesn't have keep-alive,
+					// stop the session
 					if(!req.hasKeepAlive())
 						break;
 				}else {
+					// Request malformed
 					Log.d(TAG,"Bad request");
-					res = new Response(400, "400 BAD REQUEST");
+					// Make a 400 Response
+					Response res = new Response(400, "400 BAD REQUEST");
+					// Send response
 					out.println(res.toString());
+					// Stop session
 					break;
 				}
 		    }		
-			//closing resources
+			// Stop the session
 		    stop();
 		}catch(IOException e){
+			// Catch socket timeout
 			if(e instanceof SocketTimeoutException){
 				Log.d(TAG,"Client socket timeout.");
 				stop();
 			}
+
+			// If the socket is closed by client
 			if(clientSocket.isConnected()) {
 				stop();
 				Log.d(TAG,"Client socket closed.");
 				return;
 			}
+
+			// If server is stopping
 			if(httpd.isStopped()) {				
 				return;
 			}
 			
 			e.printStackTrace();
-			Log.d(TAG,"WEIRD ERROR(S)");
 		}
 	}
-	
+
+	// Stop the session and close the resources
 	public void stop() {
 		stopped=true;
 		try {
@@ -94,6 +115,8 @@ public 	class HttpSession implements Runnable{
 			e.printStackTrace();
 		}
 		Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] closed");
+
+		// Remove from server's active sessions
 		httpd.removeSession(this);
 	}
 

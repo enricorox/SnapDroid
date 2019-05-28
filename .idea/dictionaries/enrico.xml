@@ -2,7 +2,9 @@
   <dictionary name="enrico">
     <words>
       <w>arduino</w>
+      <w>cors</w>
       <w>ligth</w>
+      <w>suspensive</w>
     </words>
   </dictionary>
 </component>

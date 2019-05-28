@@ -2,43 +2,57 @@ package snaphttpd.server;
 
 import android.support.annotation.NonNull;
 
+// Model of an HTTP Response
 public class Response{
-	private boolean keepAlive,cors; //CrossOriginResourceSharing
-	private int code;//status code
-	private String body,protocol;//message-body
-	public Response(int acode) {
-		this(acode,null);
-	}
-	public Response(int acode,String abody) {		
-		code=acode;
-		body=abody;
+	private boolean keepAlive,cors;
+	private int code;
+	private String body,protocol;
 
-		//default parameters
-		protocol="HTTP/1.1";
-		cors=true;
-		keepAlive=true; //HTTP/1.1 compliant
+	public Response(int code) {
+		this(code,null);
 	}
+
+	public Response(int code,String body) {
+		// Set status code
+		this.code = code;
+		// Set body
+		this.body = body;
+
+		// Default parameters:
+		// Set protocol
+		protocol="HTTP/1.1";
+		// Set Cross Origin Resource Sharing
+		cors=true;
+		// Set keep-alive
+		keepAlive=true;
+	}
+
 	@NonNull
 	public Response setProtocol(String p) {
 		protocol=p;
 		return this;
 	}
+
 	@NonNull
 	public Response setCors(boolean on) {
 		cors=on;
 		return this;
 	}
+
 	@NonNull
 	public Response setKeepAlive(boolean on) {
 		keepAlive=on;
 		return this;
 	}
+
+	// Return the response
 	@NonNull
 	public String toString() {
-		//building status-line
+		// Choose status-line
 		StringBuilder r=new StringBuilder(protocol);
 		r.append(" ");
-		//choose status code & status phrase
+
+		// Choose status code and status phrase
 		switch(code) {
 		case 200: r.append("200 OK\r\n"); break;									
 		case 400: r.append("400 Bad Request\r\n"); break;				
@@ -47,7 +61,8 @@ public class Response{
 		case 503: r.append("503 Service Unavailable\r\n"); break;
 		default: r.append("500 Internal Server Error\r\n"); break;				 										
 		}
-		//building headers
+
+		// Choose headers
 		r.append("Cache-Control: no-store\r\n");
 		if(cors)
 			r.append("Access-Control-Allow-Origin: *\r\n");
@@ -55,13 +70,19 @@ public class Response{
 			r.append("Connection: keep-alive\r\n");
 		else
 			r.append("Connection: close\r\n");
-		
+
+		// If there is a body
 		if(body!=null) {
-			r.append("Content-Length: "+body.length()+"\r\n");
-			r.append("Content-Type: text/html\r\n\r\n");//end of headers
+			r.append("Content-Length: ").append(body.length()).append("\r\n");
+			r.append("Content-Type: text/html\r\n");
+			// End of headers
+			r.append("\r\n");
+			// Insert body
 			r.append(body);
-		}else
-			r.append("\r\n");//end of headers
+		}else {
+			// End of headers
+			r.append("\r\n");
+		}
 		return r.toString();
 	}
 }
