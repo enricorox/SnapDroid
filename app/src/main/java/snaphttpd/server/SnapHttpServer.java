@@ -8,11 +8,8 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 // Minimal HTTP server class.
 public class SnapHttpServer implements Runnable{
@@ -24,7 +21,7 @@ public class SnapHttpServer implements Runnable{
 	// Volatile variable can't be cached
 	private volatile boolean stopped;
 	private ServerSocket serverSocket;
-	private final List<HttpSession> openSessions;
+	private final ConcurrentLinkedDeque<HttpSession> openSessions;
 	private Resource resource;
 
 	// Construct server listening at port aport with optional debug
@@ -35,7 +32,7 @@ public class SnapHttpServer implements Runnable{
 		stopped=true;
 		backlog=5;
 		// List of active sessions
-		openSessions = Collections.synchronizedList(new LinkedList<HttpSession>());
+		openSessions = new ConcurrentLinkedDeque<>();
 	}
 
 	// Start the server
@@ -58,9 +55,7 @@ public class SnapHttpServer implements Runnable{
 				// Make a new HTTP session
 				HttpSession s = new HttpSession(this, clientSocket);
 				// Add it in the active sessions list
-				synchronized (openSessions) {
-					openSessions.add(s);
-				}
+				openSessions.add(s);
 				// Start that session in a new thread
 				Thread t = new Thread(s);
 				t.start();
@@ -108,10 +103,8 @@ public class SnapHttpServer implements Runnable{
 		stopped=true;
 
 		// Stop all sessions
-		synchronized(openSessions) {
-			for (HttpSession openSession : openSessions) {
-				openSession.stop();
-			}
+		for (HttpSession openSession : openSessions) {
+			openSession.stop();
 		}
 
 		// Close the socket
