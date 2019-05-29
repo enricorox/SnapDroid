@@ -87,17 +87,12 @@ public 	class HttpSession implements Runnable{
 			if(e instanceof SocketTimeoutException){
 				Log.d(TAG,"Client socket timeout.");
 				stop();
-			}
-
-			// If the socket is closed by client
-			if(clientSocket.isConnected()) {
-				stop();
-				Log.d(TAG,"Client socket closed.");
 				return;
 			}
 
 			// If server is stopping
-			if(httpd.isStopped()) {				
+			if(httpd.isStopped()) {
+				stop();
 				return;
 			}
 			
@@ -107,7 +102,9 @@ public 	class HttpSession implements Runnable{
 
 	// Stop the session and close the resources
 	public void stop() {
+		// Change the flag
 		stopped=true;
+		// Close resource
 		try {
 			out.close();
 			in.close();
@@ -115,6 +112,7 @@ public 	class HttpSession implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		// Log socket closed
 		Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] closed");
 
 		// Remove from server's active sessions

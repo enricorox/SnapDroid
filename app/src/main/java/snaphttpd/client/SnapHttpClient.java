@@ -105,7 +105,6 @@ public class SnapHttpClient implements Runnable{
 						// Send the request
 						out.print(request);
 						out.flush();
-						Log.d(name,"Request sent:\n"+request);
 						//------------------------------------
 
 						// Read the status-line
