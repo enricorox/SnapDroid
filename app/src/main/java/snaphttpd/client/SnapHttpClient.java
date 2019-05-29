@@ -5,6 +5,7 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -18,6 +19,9 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 	It communicates with Snap4Arduino's server
 */
 public class SnapHttpClient implements Runnable{
+	private Socket socket;
+	private BufferedReader in;
+	private PrintWriter out;
 	@NonNull
 	private final ConcurrentLinkedDeque<String> dataQueue;
 	@Nullable
@@ -64,7 +68,6 @@ public class SnapHttpClient implements Runnable{
 		stopped=false;
 		// Run forever until stopped
 		while(!isStopped()) {
-			Socket socket;
 			try {
 				socket = new Socket();
 				//-------------------------------------------
@@ -74,18 +77,19 @@ public class SnapHttpClient implements Runnable{
 				Log.d(name,"Connected!");
 
 				// Make buffers
-				BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				PrintWriter out = new PrintWriter(socket.getOutputStream(), false);
+				in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				out = new PrintWriter(socket.getOutputStream(), false);
 
 				// Start the session
-				while (true) {//---session starts---
+				boolean validSession = true;
+				while (validSession) {//---session starts---
 					waitRequest();
 					Log.d(name,"Response acquired! :)");
 
 					// Stop if stopped==true
 					if(isStopped()){
-						Log.d(name,"Stopping session...");
-						break;
+						Log.d(name,"Client stopped.");
+						return;
 					}
 
 					//Update variable on Snap4Arduino and broadcast message
@@ -101,12 +105,17 @@ public class SnapHttpClient implements Runnable{
 						// Send the request
 						out.print(request);
 						out.flush();
+						Log.d(name,"Request sent:\n"+request);
 						//------------------------------------
 
 						// Read the status-line
 						String response = in.readLine();
-						if (response == null) { //socket closed by server
+
+						// If response is invalid
+						if (response == null) {
 							Log.d(name, "[RST] Connection reset!");
+							validSession = false;
+							closeResource();
 							break;
 						}
 
@@ -125,23 +134,14 @@ public class SnapHttpClient implements Runnable{
 							dataQueue.removeLast();
 					}
 				}//---session ends---
-				out.close();
-				in.close();
-				socket.close();
+
 			}catch(Exception e){
 				e.printStackTrace();
 			}//--end try-catch
 		}//--end while(!isStopped())
-		Log.d(name,"Stopped.");
 	}//--end run()
 
-	// Start client in new thread
-	public void start(){
-		Thread t=new Thread(this);
-		t.start();
-		Log.d(name,"Thread " + name + " started!");
-	}
-
+	// Put data in a sending queue
 	public void send(String data){
 		// If stopped do nothing
 		if(isStopped())
@@ -165,15 +165,36 @@ public class SnapHttpClient implements Runnable{
 				"\r\n";
 	}
 
+	// Start client in new thread
+	public void start(){
+		Thread t=new Thread(this);
+		t.start();
+		Log.d(name,"Thread " + name + " started!");
+	}
+
 	// Stop the client
 	public void stop(){
+		// Client stopped, notify the client thread
 		stopped = true;
-		// Client stopped, notify the client
 		synchronized (this) {
 			notify();
 		}
-		Log.d(name,"Stopping...");
+
+		// Close resources
+		closeResource();
 	}
+
+	private void closeResource(){
+		Log.d(name,"Closing resources...");
+		try {
+			out.close();
+			in.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public boolean isStopped(){
 		return stopped;
 	}
