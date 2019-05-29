@@ -247,7 +247,7 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
 			azimuth = Math.round(event.values[0]);
 			pitch = Math.round(event.values[1]);
 			roll = Math.round(event.values[2]);
-			// Send value if it changes by 1 unit
+			// Send value if it changes by at least 1 unit
 			if(azimuth!= pAzimuth) {
 				pAzimuth = azimuth;
 				if(mustSend)
@@ -278,10 +278,10 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
 	// Get the IPv4 address
 	public static String getMyIpAddress() {
 		try {
-			//search interfaces
+			// Search interfaces
 			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
 				NetworkInterface intf = en.nextElement();
-				//search addresses
+				// Search addresses
 				for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
 					InetAddress inetAddress = enumIpAddr.nextElement();
 					if (!inetAddress.isLoopbackAddress() && (inetAddress instanceof Inet4Address)) {

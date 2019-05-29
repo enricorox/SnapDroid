@@ -50,14 +50,15 @@ public class Request{
 					sc.close();
 
 					// Check method
-					if(!(method.equalsIgnoreCase("GET")
+					if( method == null ||
+							!(method.equalsIgnoreCase("GET")
 							|| method.equalsIgnoreCase("HEAD")
 							|| method.equalsIgnoreCase("POST")
 							|| method.equalsIgnoreCase("PUT")
 							|| method.equalsIgnoreCase("DELETE")
 							|| method.equalsIgnoreCase("TRACE")
 							|| method.equalsIgnoreCase("CONNECT")))
-						 unknownMethod=true;
+						 unknownMethod = true;
 
 					// Check protocol
 					if(!(protocol.equalsIgnoreCase("HTTP/1.1")
@@ -101,7 +102,6 @@ public class Request{
 	}
 
 	@Nullable
-
 	public String getProtocol() {
 		return protocol;
 	}

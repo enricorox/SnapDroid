@@ -27,7 +27,7 @@ public class SnapHttpServer implements Runnable{
 	private final List<HttpSession> openSessions;
 	private Resource resource;
 
-	//Construct server listening at port aport with optional debug
+	// Construct server listening at port aport with optional debug
 	public SnapHttpServer(Resource r, int aport) {
 		// Initialization
 		resource =r;
@@ -109,9 +109,8 @@ public class SnapHttpServer implements Runnable{
 
 		// Stop all sessions
 		synchronized(openSessions) {
-			Iterator<HttpSession> it=openSessions.iterator();
-			while(it.hasNext()) {
-				it.next().stop();
+			for (HttpSession openSession : openSessions) {
+				openSession.stop();
 			}
 		}
 

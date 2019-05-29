@@ -3,4 +3,9 @@
     <string name="no">NO</string>
     <string name="IP">IP ADDRESS</string>
     <string name="SnapDroid_IP">SnapDroid IP: %s</string>
+    <string name="snap4arduino_ip_address">Snap4Arduino IP address:</string>
+    <string name="run">RUN</string>
+    <string name="_192_168_1_2">192.168.1.2</string>
+    <string name="enable_snapdroid_http_client">Enable SnapDroid HTTP client</string>
+    <string name="enable_snapdroid_http_server">Enable SnapDroid HTTP server</string>
 </resources>
