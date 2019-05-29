@@ -1,6 +1,5 @@
 package com.gmail.enricorrx.snapdroid;
 
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -38,6 +37,7 @@ import snaphttpd.server.SnapHttpServer;
 /*
     Second Activity, starts all threads that communicate with Snap/Snap4Arduino
 */
+@SuppressWarnings("deprecation")
 public class SnapDroid extends AppCompatActivity implements SensorEventListener {
 	private SnapHttpClient httpLigth, httpStopButton, httpStartButton, httpProximity;
 	private SnapHttpClient httpAzimuth, httpPitch, httpRoll;
@@ -150,14 +150,14 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
 					return "OK";
 				}
 
-
-                /* For other sensors simply write:
-
-                if(path.equalsIgnoreCase("/resource"))
-                    return myValue;
+                // For other sensors simply write:
+				/*
+                	if(path.equalsIgnoreCase("/resource"))
+                    	return myValue;
                 */
 
-				return null; //it's ok to return null, means 404
+				// null --> 404 Not Found
+				return null;
 			}
 		},8080);
 	}
@@ -270,9 +270,9 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
 			proximity = event.values[0];
 			if(mustSend)
 				httpProximity.send(String.valueOf(proximity));
+			//noinspection UnnecessaryReturnStatement
 			return;
 		}
-
 	}
 
 	// Get the IPv4 address
@@ -333,9 +333,6 @@ public class SnapDroid extends AppCompatActivity implements SensorEventListener 
 				// The service is unavailable
 				return false;
 			}
-
 		}
 	}
-
-
 }

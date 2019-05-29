@@ -41,6 +41,7 @@ public 	class HttpSession implements Runnable{
 				Request req = new Request();
 
 				// Parse the request line by line
+				//noinspection StatementWithEmptyBody
 				while(req.parseRequest(in.readLine()));
 
 				// Check if there are errors

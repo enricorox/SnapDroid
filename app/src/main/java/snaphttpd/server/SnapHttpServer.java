@@ -8,7 +8,6 @@ import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -157,5 +156,4 @@ public class SnapHttpServer implements Runnable{
         } catch (SocketException ignored) {}
         return null; 
 	}
-	
 }

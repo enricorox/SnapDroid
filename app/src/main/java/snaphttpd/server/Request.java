@@ -126,5 +126,4 @@ public class Request{
 			return false;
 		return method.equalsIgnoreCase("GET");
 	}
-	
 }	

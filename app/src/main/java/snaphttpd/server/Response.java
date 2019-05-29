@@ -35,13 +35,13 @@ public class Response{
 
 	@NonNull
 	public Response setCors(boolean on) {
-		cors=on;
+		cors = on;
 		return this;
 	}
 
 	@NonNull
 	public Response setKeepAlive(boolean on) {
-		keepAlive=on;
+		keepAlive = on;
 		return this;
 	}
 
