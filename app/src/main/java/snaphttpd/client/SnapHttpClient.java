@@ -186,9 +186,12 @@ public class SnapHttpClient implements Runnable{
 	private void closeResource(){
 		Log.d(name,"Closing resources...");
 		try {
-			out.close();
-			in.close();
-			socket.close();
+			if(out != null)
+				out.close();
+			if(in != null)
+				in.close();
+			if(socket != null)
+				socket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
