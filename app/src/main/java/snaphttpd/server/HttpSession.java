@@ -18,16 +18,17 @@ public 	class HttpSession implements Runnable{
 	private final String TAG="snap-server-session";
 	private volatile boolean stopped;
 
-	public HttpSession(SnapHttpServer server, Socket aClientSocket) {
-		// Save a reference to SnapHttpServer
-		httpd=server;
+	public HttpSession(SnapHttpServer server, Socket clientSocket) {
+		// Save a reference to the caller SnapHttpServer
+		httpd = server;
 		// Socket for this session
-		clientSocket=aClientSocket;		
+		this.clientSocket = clientSocket;
 	}
 
 	public void run() {
 		try {
-			Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] accepted");
+			Log.d(TAG,"["+clientSocket.getInetAddress()+":"
+					+clientSocket.getPort()+"] accepted");
 
 			// Buffering
 			out = new PrintWriter(clientSocket.getOutputStream(), true);
@@ -52,12 +53,12 @@ public 	class HttpSession implements Runnable{
 				}
 				Log.d(TAG,"***new request***");
 
-				// If don't have errors
+				// If we don't have errors
 				if(req.isGood()) {
 					Log.d(TAG,"Good request");
 
 					// Get a response from SnapHttpServer
-					Response res=httpd.requestHandler(req);
+					Response res = httpd.requestHandler(req);
 					// Set the same protocol
 					res.setProtocol(req.getProtocol());
 					// Set keep-alive
@@ -74,12 +75,14 @@ public 	class HttpSession implements Runnable{
 					Log.d(TAG,"Bad request");
 					// Make a 400 Response
 					Response res = new Response(400, "400 BAD REQUEST");
+					// Insert connection close
+					res.setKeepAlive(false);
 					// Send response
 					out.println(res.toString());
 					// Stop session
 					break;
 				}
-		    }		
+		    }
 			// Stop the session
 		    stop();
 		}catch(IOException e){
@@ -113,7 +116,8 @@ public 	class HttpSession implements Runnable{
 			e.printStackTrace();
 		}
 		// Log socket closed
-		Log.d(TAG,"["+clientSocket.getInetAddress()+":"+clientSocket.getPort()+"] closed");
+		Log.d(TAG,"["+clientSocket.getInetAddress()+":"
+				+clientSocket.getPort()+"] closed");
 
 		// Remove from server's active sessions
 		httpd.removeSession(this);

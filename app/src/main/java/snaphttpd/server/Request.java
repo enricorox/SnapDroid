@@ -32,8 +32,10 @@ public class Request{
 	// return false if request is completed
 	boolean parseRequest(@Nullable String s) {
 		// String can't be null
-		if(s==null) {			
+		if(s==null) {
+			// Set error
 			brokenSocket=true;
+			// Can't continue parsing
 			return false;
 		}
 
@@ -61,13 +63,16 @@ public class Request{
 						 unknownMethod = true;
 
 					// Check protocol
-					if(!(protocol.equalsIgnoreCase("HTTP/1.1")
+					if( protocol == null ||
+							!(protocol.equalsIgnoreCase("HTTP/1.1")
 							|| protocol.equalsIgnoreCase("HTTP/1.0")
 							|| protocol.equalsIgnoreCase("HTTP/0.9")))
-						unknownProtocol=true;
+						unknownProtocol = true;
 				} catch (Exception e) {
 					// Request-line malformed: scanner has not enough element
-					badRequestLine=true;										
+					badRequestLine = true;
+					unknownMethod = true;
+					unknownProtocol = true;
 				}
 			}
 			// If first line is empty, does nothing
@@ -79,13 +84,14 @@ public class Request{
 		// Request (without body) ends with empty line
 		// CRLF is omitted by readLine()
 		if(s.isEmpty())
-			return false; //Parser has finished
+			// Parser has finished
+			return false;
 
 		// Parse connection header
 		if(s.contains("Connection: keep-alive"))
-			keepAlive=true;
+			keepAlive = true;
 		if(s.contains("Connection: close"))
-			keepAlive=false;
+			keepAlive = false;
 		
 		// Other header are IGNORED!
 		return true;

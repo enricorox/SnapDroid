@@ -56,7 +56,7 @@ public class SnapHttpClient implements Runnable{
 			Log.d(name, "Waiting new request...");
 
 			// Wait until new data or client is stopped
-			while (dataQueue.isEmpty() || stopped)
+			while (dataQueue.isEmpty() && !stopped)
 				synchronized (this) {
 					wait();
 				}
@@ -84,15 +84,14 @@ public class SnapHttpClient implements Runnable{
 				boolean validSession = true;
 				while (validSession) {//---session starts---
 					waitRequest();
-					Log.d(name,"Response acquired! :)");
-
 					// Stop if stopped==true
 					if(isStopped()){
 						Log.d(name,"Client stopped.");
 						return;
 					}
+					Log.d(name,"Request acquired from the queue! :)");
 
-					//Update variable on Snap4Arduino and broadcast message
+					// Update variable on Snap4Arduino and broadcast message
 					String request;
 					for(int i=0;i<2;i++) {
 						// Choose the request
@@ -113,14 +112,18 @@ public class SnapHttpClient implements Runnable{
 						// If response is invalid
 						if (response == null) {
 							Log.d(name, "[RST] Connection reset!");
+							// Invalidate this session
 							validSession = false;
+							// Close resources
 							closeResource();
+							// Restart the session
 							break;
 						}
 
-						// Read and IGNORE the request
-						// assuming Transfer-Encoding: chunked
-						// assuming Connection: keep-alive
+						// Read and IGNORE the response
+						// Assuming Snap4Arduino server ie:
+						// - assuming Transfer-Encoding: chunked
+						// - assuming Connection: keep-alive
 						while (!response.equals("0")) {
 							response = in.readLine();
 						}
@@ -133,7 +136,6 @@ public class SnapHttpClient implements Runnable{
 							dataQueue.removeLast();
 					}
 				}//---session ends---
-
 			}catch(Exception e){
 				e.printStackTrace();
 			}//--end try-catch
@@ -148,12 +150,11 @@ public class SnapHttpClient implements Runnable{
 
 		// Save the data
 		dataQueue.addFirst(data);
+		Log.d(name,"New request! Pending: " + dataQueue.size());
 		// Notify the client
 		synchronized (this) {
 			notify();
 		}
-
-		Log.d(name,"New request! Pending: " + dataQueue.size());
 	}
 
 	// Build the request for updating the variable

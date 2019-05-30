@@ -20,16 +20,16 @@ public class Response{
 
 		// Default parameters:
 		// Set protocol
-		protocol="HTTP/1.1";
+		protocol = "HTTP/1.1";
 		// Set Cross Origin Resource Sharing
-		cors=true;
+		cors = true;
 		// Set keep-alive
-		keepAlive=true;
+		keepAlive = true;
 	}
 
 	@NonNull
 	public Response setProtocol(String p) {
-		protocol=p;
+		protocol = p;
 		return this;
 	}
 
@@ -49,7 +49,7 @@ public class Response{
 	@NonNull
 	public String toString() {
 		// Choose status-line
-		StringBuilder r=new StringBuilder(protocol);
+		StringBuilder r = new StringBuilder(protocol);
 		r.append(" ");
 
 		// Choose status code and status phrase
@@ -73,7 +73,9 @@ public class Response{
 
 		// If there is a body
 		if(body!=null) {
-			r.append("Content-Length: ").append(body.length()).append("\r\n");
+			r.append("Content-Length: ")
+					.append(body.length())
+					.append("\r\n");
 			r.append("Content-Type: text/html\r\n");
 			// End of headers
 			r.append("\r\n");

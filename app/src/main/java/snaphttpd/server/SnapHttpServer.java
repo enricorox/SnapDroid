@@ -24,13 +24,13 @@ public class SnapHttpServer implements Runnable{
 	private final ConcurrentLinkedDeque<HttpSession> openSessions;
 	private Resource resource;
 
-	// Construct server listening at port aport with optional debug
-	public SnapHttpServer(Resource r, int aport) {
+	// Construct the server with given Resource
+	public SnapHttpServer(Resource r, int port) {
 		// Initialization
-		resource =r;
-		port=aport;
-		stopped=true;
-		backlog=5;
+		resource = r;
+		this.port = port;
+		stopped = true;
+		backlog = 5;
 		// List of active sessions
 		openSessions = new ConcurrentLinkedDeque<>();
 	}
@@ -78,11 +78,11 @@ public class SnapHttpServer implements Runnable{
 		if(!req.isGet() || resource == null)
 			return new Response(501,"NOT IMPLEMENTED");		
 
-		// Get a body from Resource object
+		// Get a value from Resource object
 		String body = resource.send(req.getPath());
 
 		// If there isn't a body
-		if(body==null)
+		if(body == null)
 			return new Response(404,"404 NOT FOUND").setKeepAlive(false);
 
 		// If all is OK
@@ -91,7 +91,7 @@ public class SnapHttpServer implements Runnable{
 	
 	// Start the server in a new thread
 	public void start() {
-		Thread t=new Thread(this); //"this" is Runnable
+		Thread t=new Thread(this);
 		t.start();
 		Log.d(TAG,"Server started");
 	}
@@ -118,6 +118,7 @@ public class SnapHttpServer implements Runnable{
 	}
 
 	// Remove a stopped session
+	// Callback from HttpSession
 	void removeSession(HttpSession s) {
 		synchronized(openSessions) {
 			openSessions.remove(s);
